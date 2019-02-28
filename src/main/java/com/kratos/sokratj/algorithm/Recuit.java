@@ -39,4 +39,7 @@ public class Recuit {
         }
         return solutionList;
     }
+
+
+    public static void main()
 }
