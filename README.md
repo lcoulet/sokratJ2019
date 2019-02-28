@@ -1,2 +1,5 @@
 # sokratJ2019
-haschcode 2019 java team
+Hashcode H2019 java team
+
+
+
