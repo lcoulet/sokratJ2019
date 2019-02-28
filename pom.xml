@@ -22,6 +22,30 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>27.0.1-jre</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <version>2.7.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>2.11.0</version>
+        </dependency>
     </dependencies>
 
 
@@ -69,63 +93,7 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>pl.project13.maven</groupId>
-                <artifactId>git-commit-id-plugin</artifactId>
-                <version>2.2.3</version>
-                <executions>
-                    <execution>
-                        <id>get-the-git-infos</id>
-                        <goals>
-                            <goal>revision</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>validate-the-git-infos</id>
-                        <goals>
-                            <goal>validateRevision</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
 
-                <configuration>
-                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
-                    <prefix>git</prefix>
-                    <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
-                    <dateFormatTimeZone>${user.timezone}</dateFormatTimeZone>
-                    <verbose>false</verbose>
-                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
-                    <format>properties</format>
-                    <skipPoms>true</skipPoms>
-                    <injectAllReactorProjects>false</injectAllReactorProjects>
-                    <failOnNoGitDirectory>true</failOnNoGitDirectory>
-                    <failOnUnableToExtractRepoInfo>true</failOnUnableToExtractRepoInfo>
-                    <skip>false</skip>
-                    <runOnlyOnce>false</runOnlyOnce>
-                    <includeOnlyProperties>
-                        <includeOnlyProperty>^git.commit.id$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.commit.id.describe$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.dirty$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.build.time$</includeOnlyProperty>
-                        <includeOnlyProperty>^git.build.version$</includeOnlyProperty>
-                    </includeOnlyProperties>
-                    <useNativeGit>false</useNativeGit>
-                    <abbrevLength>7</abbrevLength>
-                    <commitIdGenerationMode>flat</commitIdGenerationMode>
-                    <gitDescribe>
-                        <skip>false</skip>
-                        <always>false</always>
-                        <abbrev>7</abbrev>
-                        <dirty>-modified</dirty>
-                        <match>*</match>
-                        <tags>true</tags>
-                        <forceLongFormat>false</forceLongFormat>
-                    </gitDescribe>
-                    <validationShouldFailIfNoMatch>true</validationShouldFailIfNoMatch>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 </project>
