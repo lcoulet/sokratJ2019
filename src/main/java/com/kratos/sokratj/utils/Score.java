@@ -24,6 +24,24 @@ public class Score {
         return Math.min(Math.min(lhsExclusive, common), rhsExclusive);
     }
 
+    public static long computeLogScore(final Slide lhs,
+                                    final Slide rhs) {
+        List<String> leftTags = lhs.getPhotos()
+                                   .stream()
+                                   .flatMap(photo -> photo.getTags().stream()).distinct().collect(Collectors.toList());
+        List<String> rightTags = rhs.getPhotos().stream()
+                                    .flatMap(photo -> photo.getTags().stream())
+                                    .distinct()
+                                    .collect(Collectors.toList());
+
+        long lhsExclusive = leftTags.stream().filter(s -> !rightTags.contains(s)).count();
+        long common = leftTags.size() - lhsExclusive;
+        long rhsExclusive = rightTags.size() - common;
+        System.out.println(lhsExclusive + " " + common + " " + rhsExclusive);
+
+        return Math.min(Math.min(lhsExclusive, common), rhsExclusive);
+    }
+
     public static long getScore(final List<Slide> slideList) {
         if(slideList.size() <= 1) {
             return 0;
