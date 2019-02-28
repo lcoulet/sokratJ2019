@@ -3,6 +3,8 @@ package com.kratos.sokratj;
 import com.kratos.sokratj.model.*;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,12 +22,25 @@ public class SolutionSerializerTest {
 
     @Test
     public void testSerialize() {
-        List<Slide> data = new ArrayList<>();
-        data.add(ImmutableSlide.builder().addPhotos(photos[0],photos[1]).build());
-        data.add(ImmutableSlide.builder().addPhotos(photos[2],photos[3],photos[1]).build());
-        data.add(ImmutableSlide.builder().addPhotos(photos[4]).build());
+        List<Slide> data = createSomeSlides();
 
         System.out.println(new SolutionSerializer().serializeSolution(data));
+    }
+
+
+    @Test
+    public void testSerializetoFile() throws FileNotFoundException {
+        List<Slide> data = createSomeSlides();
+
+        new SolutionSerializer().serializeSolutionToFile(createSomeSlides(), new File("testresults.txt"));
+    }
+
+    private List<Slide> createSomeSlides() {
+        List<Slide> data = new ArrayList<>();
+        data.add(ImmutableSlide.builder().addPhotos(photos[0], photos[1]).build());
+        data.add(ImmutableSlide.builder().addPhotos(photos[2], photos[3], photos[1]).build());
+        data.add(ImmutableSlide.builder().addPhotos(photos[4]).build());
+        return data;
     }
 
 
