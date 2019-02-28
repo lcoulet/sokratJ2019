@@ -27,9 +27,9 @@ public class Recuit {
     }
 
     public List<Slide> optimize() {
-        double temperature = 1000;
+        double temperature = 100;
         double temperatureStep = 0.9999;
-        double temperatureLimit = 0.001;
+        double temperatureLimit = 0.0001;
 
         long referenceScore = Score.getScore(startSolution);
         int i = 0;
@@ -81,6 +81,7 @@ public class Recuit {
             }
 
             if (bestScore < referenceScore) {
+                bestScore = referenceScore;
                 best = startSolution;
             }
 
