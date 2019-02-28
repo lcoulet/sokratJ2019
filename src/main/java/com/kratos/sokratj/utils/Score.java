@@ -22,4 +22,16 @@ public class Score {
 
         return Math.min(Math.min(lhsExclusive, common), rhsExclusive);
     }
+
+    public static long getScore(final List<ImmutableSlide> slideList) {
+        if(slideList.size() <= 1) {
+            return 0;
+        }
+
+        long cumulativeSum = 0;
+        for (int i = 1; i < slideList.size(); i++) {
+            cumulativeSum += computeScore(slideList.get(i - 1), slideList.get(i));
+        }
+        return cumulativeSum;
+    }
 }
