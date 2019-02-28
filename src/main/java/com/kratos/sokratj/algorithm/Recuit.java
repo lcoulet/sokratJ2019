@@ -2,8 +2,10 @@ package com.kratos.sokratj.algorithm;
 
 import com.kratos.sokratj.model.ImmutableSlide;
 import com.kratos.sokratj.model.Photo;
+import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +43,7 @@ public class Recuit {
     }
 
 
-    public static void main(final String[] args) {
-        
+    public static void main(final String[] args) throws IOException {
+        List<Photo> photos = new PhotoParser().parseData("data/a_example.txt");
     }
 }

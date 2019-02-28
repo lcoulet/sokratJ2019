@@ -1,13 +1,14 @@
 package com.kratos.sokratj.utils;
 
 import com.kratos.sokratj.model.ImmutableSlide;
+import com.kratos.sokratj.model.Slide;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class Score {
-    public static long computeScore(final ImmutableSlide lhs,
-                                   final ImmutableSlide rhs) {
+    public static long computeScore(final Slide lhs,
+                                   final Slide rhs) {
         List<String> leftTags = lhs.getPhotos()
                                  .stream()
                                  .flatMap(photo -> photo.getTags().stream()).distinct().collect(Collectors.toList());
