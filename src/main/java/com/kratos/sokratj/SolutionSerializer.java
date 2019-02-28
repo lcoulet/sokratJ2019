@@ -1,9 +1,7 @@
 package com.kratos.sokratj;
 
 import com.google.common.base.Joiner;
-import com.kratos.sokratj.model.Photo;
 import com.kratos.sokratj.model.Slide;
-import com.kratos.sokratj.model.SlideShow;
 
 import java.io.File;
 import java.io.FileNotFoundException;

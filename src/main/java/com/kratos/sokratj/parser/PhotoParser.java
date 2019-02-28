@@ -44,7 +44,7 @@ public class PhotoParser {
             String[] tokens = line.split("\\s+");
             boolean vertical = "V".equalsIgnoreCase(tokens[0]);
 
-            List<String> tags = Arrays.asList(Arrays.copyOfRange(tokens, 1, tokens.length));
+            List<String> tags = Arrays.asList(Arrays.copyOfRange(tokens, 2, tokens.length));
 
             ImmutablePhoto photo = ImmutablePhoto.builder()
                     .addAllTags(tags)

@@ -50,17 +50,14 @@ public class Recuit {
 
 
     public static void main(final String[] args) throws IOException {
-        List<String> fileList = Arrays.asList("data/a_example.txt",
-                                              "data/b_lovely_landscapes.txt",
+        List<String> fileList = Arrays.asList("data/b_lovely_landscapes.txt",
                                               "data/c_memorable_moments.txt",
                                               "data/d_pet_pictures.txt",
                                               "data/e_shiny_selfies.txt");
-        List<String> res = Arrays.asList("recuit_a.text",
-                                         "recuit_b.text",
+        List<String> res = Arrays.asList("recuit_b.text",
                                          "recuit_c.text",
                                          "recuit_d.text",
                                          "recuit_e.text");
-
         for (int i = 0; i < fileList.size(); i++) {
             String s = fileList.get(i);
             List<Photo> photos = new PhotoParser().parseData(s);
