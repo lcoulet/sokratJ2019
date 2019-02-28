@@ -11,5 +11,5 @@ import java.util.List;
  */
 @$ValueMirrors.Immutable
 public interface SlideShow {
-    public List<Slide> getSlides();
+    List<Slide> getSlides();
 }
