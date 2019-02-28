@@ -5,6 +5,9 @@ import com.kratos.sokratj.model.Photo;
 import com.kratos.sokratj.model.Slide;
 import com.kratos.sokratj.model.SlideShow;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,12 @@ public class SolutionSerializer {
                         )
                 ).collect(Collectors.toList())
         );
+    }
+
+    public void serializeSolutionToFile( List<Slide> solution , File outputFile) throws FileNotFoundException {
+        PrintWriter writer = new PrintWriter(outputFile);
+        writer.println(serializeSolution(solution));
+        writer.close();
     }
 
 }
