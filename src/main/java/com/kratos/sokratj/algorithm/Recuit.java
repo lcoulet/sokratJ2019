@@ -28,7 +28,7 @@ public class Recuit {
 
     public List<Slide> optimize() {
         double temperature = 100;
-        double temperatureStep = 0.9999;
+        double temperatureStep = 0.99995;
         double temperatureLimit = 0.0001;
 
         long referenceScore = Score.getScore(startSolution);
