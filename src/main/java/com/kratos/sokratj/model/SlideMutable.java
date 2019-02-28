@@ -11,6 +11,6 @@ public class SlideMutable implements Slide {
 
     @Override
     public List<Photo> getPhotos() {
-        return null;
+        return photoList;
     }
 }

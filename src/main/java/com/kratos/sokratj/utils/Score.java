@@ -24,7 +24,7 @@ public class Score {
         return Math.min(Math.min(lhsExclusive, common), rhsExclusive);
     }
 
-    public static long getScore(final List<ImmutableSlide> slideList) {
+    public static long getScore(final List<Slide> slideList) {
         if(slideList.size() <= 1) {
             return 0;
         }
