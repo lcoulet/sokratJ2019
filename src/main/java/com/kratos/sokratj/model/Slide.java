@@ -12,6 +12,6 @@ import java.util.List;
 @Value.Immutable
 public interface Slide {
 
-    public List<Photo> getPhotos();
+    List<Photo> getPhotos();
 
 }

@@ -12,7 +12,8 @@ import java.util.List;
 @Value.Immutable
 public interface Photo {
 
-    public List<String> getTags();
-    public int getId();
+    List<String> getTags();
+    int getId();
+    boolean isVertical();
 
 }
