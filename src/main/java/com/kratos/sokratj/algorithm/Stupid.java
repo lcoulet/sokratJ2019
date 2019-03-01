@@ -29,6 +29,8 @@ public class Stupid {
 
     final Logger logger = LoggerFactory.getLogger(Main.class);
 
+    private int limitSearch=200;
+
     public List<Slide> compute(List<Photo> input) {
 
         indexPhotos(input);
@@ -63,9 +65,16 @@ public class Stupid {
     }
 
     private Photo getNextPhoto(Photo currentPhoto) {
-        //List<Photo> commonTags = sortByOccurence(getPhotosWithCommonTags(currentPhoto));
-        List<Photo> commonTags = getPhotosWithCommonTags(currentPhoto);
-        if(commonTags.isEmpty()){
+        return getPhotoWithMostCommonTags(currentPhoto);
+    }
+
+    private Photo getAnyPhotoWithCommonTag(Photo currentPhoto) {
+        return getAnyPhotoWithCommonTag(getPhotosWithCommonTags(currentPhoto));
+    }
+
+    private Photo getAnyPhotoWithCommonTag(List<Photo> photosWithCommonTags) {
+        List<Photo> commonTags = photosWithCommonTags;
+        if (commonTags.isEmpty()) {
             return allPhotosSet.stream().findFirst().get();
         }
         return commonTags.get(0);
@@ -121,6 +130,54 @@ public class Stupid {
 
     }
 
+    private Photo getPhotoWithMostCommonTags(Photo photo) {
+
+        List<Photo> photosWithCommonTags = getPhotosWithCommonTags(photo);
+        return selectMostFrequentPhoto(photosWithCommonTags);
+    }
+
+    private Photo selectMostFrequentPhoto(List<Photo> photosWithCommonTags) {
+        AtomicLongMap<Photo> map = AtomicLongMap.create();
+
+        photosWithCommonTags.stream().forEach(map::incrementAndGet);
+
+        Optional<Map.Entry<Photo, Long>> res = map.asMap().entrySet().stream().max(Comparator.comparingLong(Map.Entry::getValue));
+        //Optional<Map.Entry<Photo, Long>> res = map.asMap().entrySet().stream().map()limit(100).max(Comparator.comparingLong(Map.Entry::getValue));
+        if(res.isPresent())return res.get().getKey();
+        return allPhotosSet.stream().findFirst().get();
+    }
+
+    private Photo selectMostFrequentPhoto2(List<Photo> photosWithCommonTags) {
+        AtomicLongMap<Photo> map = AtomicLongMap.create();
+
+        photosWithCommonTags.stream().forEach(map::incrementAndGet);
+
+        Optional<Map.Entry<Photo, Long>> res = map.asMap().entrySet().stream().max(Comparator.comparingLong(Map.Entry::getValue));
+        if(res.isPresent())return res.get().getKey();
+        return allPhotosSet.stream().findFirst().get();
+    }
+
+    private Photo selectLeastFrequentPhoto(List<Photo> photosWithCommonTags) {
+        AtomicLongMap<Photo> map = AtomicLongMap.create();
+        photosWithCommonTags.stream().forEach(map::incrementAndGet);
+
+
+        Set<Map.Entry<Photo, Long>> entries = map.asMap().entrySet();
+        Map.Entry<Photo, Long> minEntry = entries.stream().findFirst().get();
+        long count=0;
+        for( Map.Entry<Photo, Long> entry : entries){
+            if(entry.getValue() == 1 ) return entry.getKey();
+            //if(entry.getValue() <= 1 + count/10 ) return entry.getKey();
+            if(entry.getValue() < minEntry.getValue()) minEntry = entry;
+            count++;
+        }
+        return minEntry.getKey();
+    }
+
+    private long score(Photo current, Photo matching, long tagsInCommon){
+        return Math.min(tagsInCommon, Math.min(current.getTags().size() - tagsInCommon, matching.getTags().size() - tagsInCommon));
+    }
+
     private List<Photo> getPhotosWithCommonTags(Photo photo) {
         List<Photo> results = new ArrayList<>();
         photo.getTags().stream().forEach(tag -> results.addAll(indexedPhotos.get(tag)));
@@ -128,26 +185,17 @@ public class Stupid {
         return results;
     }
 
-    private Photo getPhotoWithMostCommonTags(Photo photo) {
-        List<Photo> commonTags = sortByOccurence(getPhotosWithCommonTags(photo));
-        if(commonTags.isEmpty()){
-            return allPhotosSet.stream().findFirst().get();
-        }
-        return commonTags.get(0);
-    }
-
 
     private Photo getAPhotoWithLeastCommonTags(Photo photo, List<Photo> allOthers) {
-
         List<Photo> commonTagPhotos = getPhotosWithCommonTags(photo);
+        Set<Photo> commontagsPhotoSet = new HashSet<>(getPhotosWithCommonTags(photo));
 
-        Optional<Photo> optionalres = allOthers.stream().filter(p-> commonTagPhotos.contains(p)).findFirst();
+        Optional<Photo> optionalres = allOthers.stream().filter(p-> !commontagsPhotoSet.contains(p)).findFirst();
 
         if (optionalres.isPresent()) {
             return optionalres.get();
         } else {
-            List<Photo> data = sortByOccurence(commonTagPhotos);
-            return data.get(data.size() - 1);
+            return selectLeastFrequentPhoto(commonTagPhotos);
         }
 
     }
