@@ -56,6 +56,6 @@ public class Score {
     }
 
     public static long maximalTheoricalScore(List<Photo> photos){
-        return photos.stream().mapToLong(value -> value.getTags().size()/2).sum();
+        return photos.stream().mapToLong(value -> value.getTags().size()).sum();
     }
 }

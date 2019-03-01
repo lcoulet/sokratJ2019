@@ -10,6 +10,7 @@ import com.kratos.sokratj.utils.Score;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +25,8 @@ public class Main {
     static Map<String,Long> scores=new HashMap<>();
     static Map<String,Long> maxScores=new HashMap<>();
 
+    static StringBuilder scoresStr = new StringBuilder();
+
     public static void main(final String[] args) throws IOException {
         List<Photo> photos1 = new PhotoParser().parseData("data/a_example.txt");
         new SolutionSerializer().serializeSolutionToFile(createSlideShowForPhotosSet1(photos1), new File("a_example.results"));
@@ -36,7 +39,13 @@ public class Main {
         doDataSetAndRecordScore(E_SHINY_SELFIES);
 
         scores.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(stringLongEntry -> System.out.println("SCORE "  + stringLongEntry.getKey() + ": " + stringLongEntry.getValue()));
-        System.out.println("========= TOTAL : " + scores.values().stream().mapToLong(o->o).sum() + "(MAX? : " + maxScores.values().stream().mapToLong(o->o).sum() + ")");
+        String totalMsg = "========= TOTAL : " + scores.values().stream().mapToLong(o -> o).sum() + "(MAX? : " + maxScores.values().stream().mapToLong(o -> o).sum() + ")\n";
+        System.out.println(totalMsg);
+        scoresStr.append(totalMsg);
+
+        PrintWriter printWriter = new PrintWriter("scores.txt");
+        printWriter.println(scoresStr.toString());
+        printWriter.close();
 
     }
 
@@ -49,10 +58,13 @@ public class Main {
         Stopwatch timer = Stopwatch.createStarted();
         List<Photo> photos = new PhotoParser().parseData("data/"+dataSet+".txt");
         long maximalTheoricalScore = Score.maximalTheoricalScore(photos);
+        System.out.println("max SCORE of " + dataSet + " : " + maximalTheoricalScore + "?");
         maxScores.put(dataSet, maximalTheoricalScore);
         List<Slide> solution = new Stupid().compute(photos);
         long score = Score.getScore(solution);
-        System.out.println("SCORE of " + dataSet + " : "+ score + " (max " + maximalTheoricalScore + "?)");
+        String scoreMsg = "SCORE of " + dataSet + " : " + score + " (max " + maximalTheoricalScore + "?)\n";
+        System.out.println(scoreMsg);
+        scoresStr.append(scoreMsg);
         new SolutionSerializer().serializeSolutionToFile(solution, new File(dataSet+".results"));
         System.out.println("TIME:  " + timer.elapsed(TimeUnit.SECONDS) + " sec.");
         return score;
