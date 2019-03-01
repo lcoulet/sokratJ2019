@@ -27,9 +27,9 @@ public class Recuit {
     }
 
     public List<Slide> optimize() {
-        double temperature = 100;
-        double temperatureStep = 0.99995;
-        double temperatureLimit = 0.0001;
+        double temperature = 20;
+        double temperatureStep = 0.99999;
+        double temperatureLimit = 0.00001;
 
         long referenceScore = Score.getScore(startSolution);
         int i = 0;
@@ -44,24 +44,35 @@ public class Recuit {
             int secondSlide = 0;
             if (doubleSlideCount != 0) {
                 int choice = random.nextInt(2);
-                if (choice < 10) {
+                if (choice == 0) {
                     //move two slides
                     firstSlide = random.nextInt(startSolution.size());
                     secondSlide = random.nextInt(startSolution.size());
                     Collections.swap(newSolution, firstSlide, secondSlide);
                 }
                 else {
+                    //System.out.println("lala");
                     //move two vertical
                     firstSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
                     secondSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
+                    while (secondSlide == firstSlide) {
+                        secondSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
+                    }
 
                     int firstOne = random.nextInt(2);
                     int secondOne = random.nextInt(2);
+                    SlideMutable slide1 = new SlideMutable(new ArrayList<>(startSolution.get(firstSlide).getPhotos()));
+                    SlideMutable slide2 = new SlideMutable(new ArrayList<>(startSolution.get(secondSlide).getPhotos()));
 
                     Photo temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
-                    newSolution.get(firstSlide).getPhotos().set(firstOne, startSolution.get(secondSlide).getPhotos().get(secondOne));
-                    newSolution.get(secondSlide).getPhotos().set(secondOne, temp);
+                    Photo temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
+                    slide1.getPhotos().set(firstOne, temp2);
+                    slide2.getPhotos().set(secondOne, temp);
+
+                    newSolution.set(firstSlide, slide1);
+                    newSolution.set(secondSlide, slide2);
                 }
+
             }
             else {
                 firstSlide = random.nextInt(startSolution.size());
@@ -70,7 +81,13 @@ public class Recuit {
             }
 
             long newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
-            //System.out.println(newScore + " " + Score.getScore(newSolution));
+//            long computed = Score.getScore(newSolution);
+//            if (computed != newScore) {
+//                System.out.println("Wrong score ");
+//                System.out.println(computed + " " + newScore);
+//                System.out.println(firstSlide + " " + secondSlide);
+//                return null;
+//            }
             if (newScore > referenceScore) {
                 startSolution = newSolution;
                 referenceScore = newScore;
@@ -92,7 +109,7 @@ public class Recuit {
                 System.out.println(temperature + " " + referenceScore);
             }
         }
-        System.out.println(bestScore);
+        System.out.println(bestScore + " " + Score.getScore(best));
         return best;
     }
 
@@ -100,10 +117,14 @@ public class Recuit {
         if (slide1 == slide2) {
             return 0;
         }
+        else if (Math.abs(slide1 - slide2) == 1) {
+            return handleConsecutive(list, newList, slide1, slide2);
+        }
         int firstSlide = Math.min(slide1, slide2);
         int secondSlide = Math.max(slide1, slide2);
         long previousScore;
         long newScore;
+
 
         if (firstSlide == 0) {
             if (secondSlide == list.size() - 1) {
@@ -140,6 +161,35 @@ public class Recuit {
                        + Score.computeScore(newList.get(secondSlide), newList.get(secondSlide + 1));
         }
         //System.out.println(firstSlide + " " +secondSlide + " " + newScore + " " + previousScore);
+        return previousScore - newScore;
+    }
+
+    private long handleConsecutive(final List<Slide> list, final List<Slide> newList, final int slide1, final int slide2) {
+        int firstSlide = Math.min(slide1, slide2);
+        int secondSlide = Math.max(slide1, slide2);
+        long previousScore;
+        long newScore;
+
+        if (firstSlide == 0) {
+            previousScore = Score.computeScore(list.get(firstSlide), list.get(secondSlide))
+                            + Score.computeScore(list.get(secondSlide), list.get(secondSlide + 1));
+            newScore = Score.computeScore(newList.get(firstSlide), newList.get(secondSlide))
+                       + Score.computeScore(newList.get(secondSlide), newList.get(secondSlide + 1));
+        }
+        else if (secondSlide == list.size() - 1) {
+            previousScore = Score.computeScore(list.get(firstSlide - 1), list.get(firstSlide))
+                            + Score.computeScore(list.get(firstSlide), list.get(secondSlide));
+            newScore = Score.computeScore(newList.get(firstSlide - 1), newList.get(firstSlide))
+                       + Score.computeScore(newList.get(firstSlide), newList.get(secondSlide));
+        }
+        else {
+            previousScore = Score.computeScore(list.get(firstSlide - 1), list.get(firstSlide))
+                            + Score.computeScore(list.get(firstSlide), list.get(secondSlide))
+                            + Score.computeScore(list.get(secondSlide), list.get(secondSlide + 1));
+            newScore = Score.computeScore(newList.get(firstSlide - 1), newList.get(firstSlide))
+                       + Score.computeScore(newList.get(firstSlide), newList.get(secondSlide))
+                       + Score.computeScore(newList.get(secondSlide), newList.get(secondSlide + 1));
+        }
         return previousScore - newScore;
     }
 
@@ -199,9 +249,5 @@ public class Recuit {
             SolutionSerializer serializer = new SolutionSerializer();
             serializer.serializeSolutionToFile(recuit.optimize(), new File(res.get(i)));
         }
-
-//        List<Photo> photos = new PhotoParser().parseData("data/c_memorable_moments.txt");
-//        Recuit recuit = new Recuit(photos);
-//        recuit.optimize();
     }
 }
