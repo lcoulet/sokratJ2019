@@ -8,6 +8,7 @@ import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -20,49 +21,62 @@ public class Recuit {
     private List<Slide> best;
     private long bestScore;
 
-    public Recuit(final List<Photo> photoList) {
+    private Map<Slide, Integer> slideIntegerMap;
+    private List<Slide> doubleSlideList;
+
+    private final String name;
+
+    public Recuit(final List<Photo> photoList, String name) {
         random = new Random(System.currentTimeMillis());
         startSolution = generateSolution(photoList);
         System.out.println(Score.getScore(startSolution));
+        this.name = name;
     }
 
-    public List<Slide> optimize() {
-        double temperature = 20;
-        double temperatureStep = 0.99999;
-        double temperatureLimit = 0.00001;
+    public List<Slide> optimize(final String filename) throws FileNotFoundException {
+        SolutionSerializer serializer = new SolutionSerializer();
+        double startTemperature = 5;
+        double temperature = startTemperature;
+        double tau = 5000000;
+        double temperatureLimit = 0.001;
 
         long referenceScore = Score.getScore(startSolution);
-        int i = 0;
+        long i = 0;
+
+        long lastCheckScore = referenceScore;
 
         bestScore = referenceScore;
         best = startSolution;
+        boolean swap = false;
 
-
-        while (temperature > temperatureLimit) {
+        while (true) {
+            swap = false;
             List<Slide> newSolution = new ArrayList<>(startSolution);
-            int firstSlide = 0;
-            int secondSlide = 0;
+            int firstSlide;
+            int secondSlide;
             if (doubleSlideCount != 0) {
                 int choice = random.nextInt(2);
                 if (choice == 0) {
-                    //move two slides
                     firstSlide = random.nextInt(startSolution.size());
                     secondSlide = random.nextInt(startSolution.size());
+                    while (secondSlide == firstSlide) {
+                        secondSlide = random.nextInt(startSolution.size());
+                    }
                     Collections.swap(newSolution, firstSlide, secondSlide);
+                    swap = true;
                 }
                 else {
-                    //System.out.println("lala");
-                    //move two vertical
-                    firstSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
-                    secondSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
+                    firstSlide = getIndex(random.nextInt(doubleSlideCount));
+                    secondSlide = getIndex(random.nextInt(doubleSlideCount));
                     while (secondSlide == firstSlide) {
-                        secondSlide = getIndex(startSolution, random.nextInt(doubleSlideCount));
+                        secondSlide = getIndex(random.nextInt(doubleSlideCount));
                     }
-
                     int firstOne = random.nextInt(2);
                     int secondOne = random.nextInt(2);
-                    SlideMutable slide1 = new SlideMutable(new ArrayList<>(startSolution.get(firstSlide).getPhotos()));
-                    SlideMutable slide2 = new SlideMutable(new ArrayList<>(startSolution.get(secondSlide).getPhotos()));
+                    SlideMutable slide1 = new SlideMutable(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
+                                                           startSolution.get(firstSlide).getId());
+                    SlideMutable slide2 = new SlideMutable(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
+                                                           startSolution.get(secondSlide).getId());
 
                     Photo temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
                     Photo temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
@@ -72,27 +86,28 @@ public class Recuit {
                     newSolution.set(firstSlide, slide1);
                     newSolution.set(secondSlide, slide2);
                 }
-
             }
             else {
                 firstSlide = random.nextInt(startSolution.size());
                 secondSlide = random.nextInt(startSolution.size());
+                while (secondSlide == firstSlide) {
+                    secondSlide = random.nextInt(startSolution.size());
+                }
                 Collections.swap(newSolution, firstSlide, secondSlide);
             }
 
             long newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
-//            long computed = Score.getScore(newSolution);
-//            if (computed != newScore) {
-//                System.out.println("Wrong score ");
-//                System.out.println(computed + " " + newScore);
-//                System.out.println(firstSlide + " " + secondSlide);
-//                return null;
-//            }
-            if (newScore > referenceScore) {
-                startSolution = newSolution;
-                referenceScore = newScore;
-            }
-            else if (Math.exp(-(referenceScore - newScore) / temperature) > random.nextDouble()) {
+            if (newScore > referenceScore
+                || Math.exp(-(referenceScore - newScore) / temperature) > random.nextDouble()) {
+                if (swap) {
+                    if (startSolution.get(firstSlide).getPhotos().size() != 1) {
+                        slideIntegerMap.put(startSolution.get(firstSlide), secondSlide);
+                    }
+                    if (startSolution.get(secondSlide).getPhotos().size() != 1) {
+                        slideIntegerMap.put(startSolution.get(secondSlide), firstSlide);
+                    }
+                }
+
                 startSolution = newSolution;
                 referenceScore = newScore;
             }
@@ -102,14 +117,19 @@ public class Recuit {
                 best = startSolution;
             }
 
-            temperature = temperature * temperatureStep;
+            temperature = startTemperature * Math.exp(-i / tau);
 
             ++i;
-            if (i % 1024 == 0) {
-                System.out.println(temperature + " " + referenceScore);
+            if (i % 400000 == 0) {
+                System.out.println(name + " " + temperature + " " + bestScore + " (" + i + ")");
+                serializer.serializeSolutionToFile(best, new File(filename));
+                if (lastCheckScore == bestScore && temperature < temperatureLimit) {
+                    break;
+                }
+                lastCheckScore = bestScore;
             }
         }
-        System.out.println(bestScore + " " + Score.getScore(best));
+        System.out.println(name + " " + bestScore + " " + Score.getScore(best) + "(" + i + ")");
         return best;
     }
 
@@ -193,17 +213,8 @@ public class Recuit {
         return previousScore - newScore;
     }
 
-    private int getIndex(final List<Slide> list, int index) {
-        for (int i = 0; i < list.size(); i++) {
-            Slide slide = list.get(i);
-            if (slide.getPhotos().size() != 1) {
-                if (index == 0) {
-                    return i;
-                }
-                --index;
-            }
-        }
-        return list.size() - 1;
+    private int getIndex(final int index) {
+        return slideIntegerMap.get(doubleSlideList.get(index));
     }
 
     private List<Slide> generateSolution(final List<Photo> photoList) {
@@ -211,7 +222,12 @@ public class Recuit {
         simpleSlideCount = 0;
         doubleSlideCount = 0;
 
+        slideIntegerMap = new HashMap<>();
+        doubleSlideList = new ArrayList<>();
+
         List<Slide> solutionList = new ArrayList<>();
+
+        int currentIndex = 0;
 
         for (Photo photo : photoList) {
             if (photo.isVertical()) {
@@ -219,21 +235,26 @@ public class Recuit {
                     verticalBuffer = photo;
                 }
                 else {
-                    solutionList.add(new SlideMutable(Arrays.asList(verticalBuffer, photo)));
+                    Slide slide = new SlideMutable(Arrays.asList(verticalBuffer, photo), currentIndex);
+                    solutionList.add(slide);
+                    doubleSlideList.add(slide);
+                    slideIntegerMap.put(slide, currentIndex);
                     verticalBuffer = null;
                     ++doubleSlideCount;
+                    ++currentIndex;
                 }
             }
             else {
-                solutionList.add(new SlideMutable(Arrays.asList(photo)));
+                solutionList.add(new SlideMutable(Arrays.asList(photo), currentIndex));
                 ++simpleSlideCount;
+                ++currentIndex;
             }
         }
         return solutionList;
     }
 
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws IOException, InterruptedException {
         List<String> fileList = Arrays.asList("data/b_lovely_landscapes.txt",
                                               "data/c_memorable_moments.txt",
                                               "data/d_pet_pictures.txt",
@@ -242,12 +263,33 @@ public class Recuit {
                                          "recuit_c.text",
                                          "recuit_d.text",
                                          "recuit_e.text");
-        for (int i = 0; i < fileList.size(); i++) {
-            String s = fileList.get(i);
-            List<Photo> photos = new PhotoParser().parseData(s);
-            Recuit recuit = new Recuit(photos);
-            SolutionSerializer serializer = new SolutionSerializer();
-            serializer.serializeSolutionToFile(recuit.optimize(), new File(res.get(i)));
+        Thread b = new Thread(() -> execute(fileList.get(0), res.get(0), "b"));
+        Thread c = new Thread(() -> execute(fileList.get(1), res.get(1), "c"));
+        Thread d = new Thread(() -> execute(fileList.get(2), res.get(2), "d"));
+        Thread e = new Thread(() -> execute(fileList.get(3), res.get(3), "e"));
+
+        b.start();
+        c.start();
+        d.start();
+        e.start();
+
+        b.join();
+        c.join();
+        d.join();
+        e.join();
+    }
+
+    private static void execute(final String file,
+                                final String res,
+                                final String name) {
+        try {
+            List<Photo> photos = new PhotoParser().parseData(file);
+            Recuit recuit = new Recuit(photos, name);
+            recuit.optimize(res);
         }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }

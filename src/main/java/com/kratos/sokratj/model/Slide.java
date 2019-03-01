@@ -10,8 +10,13 @@ import java.util.List;
  * @author Loic.Coulet
  */
 @Value.Immutable
-public interface Slide {
+public abstract class Slide {
 
-    List<Photo> getPhotos();
+    public abstract List<Photo> getPhotos();
+
+    int id;
+    public int getId() {
+        return id;
+    }
 
 }
