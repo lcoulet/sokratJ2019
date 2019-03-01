@@ -8,6 +8,7 @@ import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
@@ -32,20 +33,23 @@ public class Recuit {
         this.name = name;
     }
 
-    public List<Slide> optimize() {
-        double startTemperature = 10;
+    public List<Slide> optimize(final String filename) throws FileNotFoundException {
+        SolutionSerializer serializer = new SolutionSerializer();
+        double startTemperature = 5;
         double temperature = startTemperature;
-        double tau = 1000000;
-        double temperatureLimit = 0.00001;
+        double tau = 5000000;
+        double temperatureLimit = 0.001;
 
         long referenceScore = Score.getScore(startSolution);
         long i = 0;
+
+        long lastCheckScore = referenceScore;
 
         bestScore = referenceScore;
         best = startSolution;
         boolean swap = false;
 
-        while (temperature > temperatureLimit) {
+        while (true) {
             swap = false;
             List<Slide> newSolution = new ArrayList<>(startSolution);
             int firstSlide;
@@ -116,8 +120,13 @@ public class Recuit {
             temperature = startTemperature * Math.exp(-i / tau);
 
             ++i;
-            if (i % 200000 == 0) {
-                System.out.println(name + " " + temperature + " " + referenceScore);
+            if (i % 400000 == 0) {
+                System.out.println(name + " " + temperature + " " + bestScore + " (" + i + ")");
+                serializer.serializeSolutionToFile(best, new File(filename));
+                if (lastCheckScore == bestScore && temperature < temperatureLimit) {
+                    break;
+                }
+                lastCheckScore = bestScore;
             }
         }
         System.out.println(name + " " + bestScore + " " + Score.getScore(best) + "(" + i + ")");
@@ -276,8 +285,7 @@ public class Recuit {
         try {
             List<Photo> photos = new PhotoParser().parseData(file);
             Recuit recuit = new Recuit(photos, name);
-            SolutionSerializer serializer = new SolutionSerializer();
-            serializer.serializeSolutionToFile(recuit.optimize(), new File(res));
+            recuit.optimize(res);
         }
         catch (Exception e) {
             e.printStackTrace();
