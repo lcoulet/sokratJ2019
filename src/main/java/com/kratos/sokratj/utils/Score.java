@@ -1,10 +1,14 @@
 package com.kratos.sokratj.utils;
 
+import com.kratos.sokratj.Main;
 import com.kratos.sokratj.model.ImmutableSlide;
 import com.kratos.sokratj.model.Photo;
 import com.kratos.sokratj.model.Slide;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Score {
@@ -57,5 +61,20 @@ public class Score {
 
     public static long maximalTheoricalScore(List<Photo> photos){
         return photos.stream().mapToLong(value -> value.getTags().size()).sum();
+    }
+
+    public static void checkResults(final List<Slide> slideList) {
+        AtomicInteger count = new AtomicInteger(0);
+        final Logger logger = LoggerFactory.getLogger(Score.class);
+        for(Slide slide: slideList){
+            if(slide.getPhotos().size()>1){
+                slide.getPhotos().forEach(photo -> {
+                    if (!photo.isVertical()) {
+                        logger.error("Error at slide " + count.get() + " photo " + photo.getId() + " is not vertical...");
+                    }
+                });
+            }
+            count.incrementAndGet();
+        }
     }
 }

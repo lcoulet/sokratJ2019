@@ -42,7 +42,7 @@ public class PhotoParser {
                 break;
             }
             String[] tokens = line.split("\\s+");
-            boolean vertical = "V".equalsIgnoreCase(tokens[0]);
+            boolean vertical = "V".equals(tokens[0]);
 
             List<String> tags = Arrays.asList(Arrays.copyOfRange(tokens, 2, tokens.length));
 
