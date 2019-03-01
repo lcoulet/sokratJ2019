@@ -1,6 +1,7 @@
 package com.kratos.sokratj.utils;
 
 import com.kratos.sokratj.model.ImmutableSlide;
+import com.kratos.sokratj.model.Photo;
 import com.kratos.sokratj.model.Slide;
 
 import java.util.List;
@@ -52,5 +53,9 @@ public class Score {
             cumulativeSum += computeScore(slideList.get(i - 1), slideList.get(i));
         }
         return cumulativeSum;
+    }
+
+    public static long maximalTheoricalScore(List<Photo> photos){
+        return photos.stream().mapToLong(value -> value.getTags().size()/2).sum();
     }
 }

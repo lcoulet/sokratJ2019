@@ -1,5 +1,6 @@
 package com.kratos.sokratj;
 
+import com.google.common.base.Stopwatch;
 import com.kratos.sokratj.algorithm.Stupid;
 import com.kratos.sokratj.model.ImmutableSlide;
 import com.kratos.sokratj.model.Photo;
@@ -8,30 +9,53 @@ import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
+
+    public static final String A_EXAMPLE = "a_example";
+    public static final String B_LOVELY_LANDSCAPES = "b_lovely_landscapes";
+    public static final String C_MEMORABLE_MOMENTS = "c_memorable_moments";
+    public static final String D_PET_PICTURES = "d_pet_pictures";
+    public static final String E_SHINY_SELFIES = "e_shiny_selfies";
+
+    static Map<String,Long> scores=new HashMap<>();
+    static Map<String,Long> maxScores=new HashMap<>();
 
     public static void main(final String[] args) throws IOException {
         List<Photo> photos1 = new PhotoParser().parseData("data/a_example.txt");
         new SolutionSerializer().serializeSolutionToFile(createSlideShowForPhotosSet1(photos1), new File("a_example.results"));
 
-        doDataSet("a_example");
-        doDataSet("b_lovely_landscapes");
-        doDataSet("c_memorable_moments");
-        doDataSet("d_pet_pictures");
-        doDataSet("e_shiny_selfies");
+
+        doDataSetAndRecordScore(A_EXAMPLE);
+        doDataSetAndRecordScore(B_LOVELY_LANDSCAPES);
+        doDataSetAndRecordScore(C_MEMORABLE_MOMENTS);
+        doDataSetAndRecordScore(D_PET_PICTURES);
+        doDataSetAndRecordScore(E_SHINY_SELFIES);
+
+        scores.entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).forEach(stringLongEntry -> System.out.println("SCORE "  + stringLongEntry.getKey() + ": " + stringLongEntry.getValue()));
+        System.out.println("========= TOTAL : " + scores.values().stream().mapToLong(o->o).sum() + "(MAX? : " + maxScores.values().stream().mapToLong(o->o).sum() + ")");
 
     }
 
-    private static void doDataSet(String dataSet) throws IOException {
+    private static void doDataSetAndRecordScore(String dataSet) throws IOException {
+        scores.put(dataSet, doDataSet(dataSet));
+    }
+
+    private static long doDataSet(String dataSet) throws IOException {
+
+        Stopwatch timer = Stopwatch.createStarted();
         List<Photo> photos = new PhotoParser().parseData("data/"+dataSet+".txt");
+        long maximalTheoricalScore = Score.maximalTheoricalScore(photos);
+        maxScores.put(dataSet, maximalTheoricalScore);
         List<Slide> solution = new Stupid().compute(photos);
-        System.out.println("SCORE " + dataSet + " : "+ Score.getScore(solution));
+        long score = Score.getScore(solution);
+        System.out.println("SCORE of " + dataSet + " : "+ score + " (max " + maximalTheoricalScore + "?)");
         new SolutionSerializer().serializeSolutionToFile(solution, new File(dataSet+".results"));
+        System.out.println("TIME:  " + timer.elapsed(TimeUnit.SECONDS) + " sec.");
+        return score;
     }
 
     private static List<Slide> createSlideShowForPhotosSet1(List<Photo> photos1) {

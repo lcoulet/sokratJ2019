@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 public class Stupid {
 
+
     HashMultimap<String, Photo> indexedPhotos = HashMultimap.create();
     Set<Photo> allPhotosSet = new HashSet<>();
     Map<Photo, Slide> virtualPhotos = new HashMap<>();
@@ -55,17 +56,19 @@ public class Stupid {
         addSlideFromVirtualPhoto(currentPhoto, results);
 
         while(allPhotosSet.size() > 0 ){
-            addSlideFromVirtualPhoto(getNextPhoto(currentPhoto), results);
+            currentPhoto = getNextPhoto(currentPhoto);
+            addSlideFromVirtualPhoto(currentPhoto, results);
         }
 
     }
 
     private Photo getNextPhoto(Photo currentPhoto) {
-        List<Photo> commonTags = sortByOccurence(getPhotosWithCommonTags(currentPhoto));
+        //List<Photo> commonTags = sortByOccurence(getPhotosWithCommonTags(currentPhoto));
+        List<Photo> commonTags = getPhotosWithCommonTags(currentPhoto);
         if(commonTags.isEmpty()){
             return allPhotosSet.stream().findFirst().get();
         }
-        return commonTags.get(commonTags.size()/2);
+        return commonTags.get(0);
     }
 
 
