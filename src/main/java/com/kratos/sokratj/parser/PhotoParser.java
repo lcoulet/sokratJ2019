@@ -3,11 +3,14 @@ package com.kratos.sokratj.parser;
 import com.kratos.sokratj.Main;
 import com.kratos.sokratj.model.ImmutablePhoto;
 import com.kratos.sokratj.model.Photo;
+import com.kratos.sokratj.model.PhotoOpti;
+import com.kratos.sokratj.model.Slide;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * PhotoParser
@@ -62,5 +65,28 @@ public class PhotoParser {
 
         return results;
 
+    }
+
+    public static List<PhotoOpti> optimize(final List<Photo> toOptimze) {
+        List<PhotoOpti> res = new ArrayList<>();
+
+        Map<String, Long> tagMap = new HashMap<>();
+        long count = 0;
+
+        for (Photo photo : toOptimze) {
+            for (String s : photo.getTags()) {
+                if (!tagMap.containsKey(s)) {
+                    tagMap.put(s, count);
+                    ++count;
+                }
+            }
+        }
+
+        for (Photo photo : toOptimze) {
+            List<Long> translated = photo.getTags().stream().map(tagMap::get).collect(Collectors.toList());
+            res.add(new PhotoOpti(translated, photo.getId(), photo.isVertical()));
+        }
+
+        return res;
     }
 }
