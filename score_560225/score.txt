@@ -1,0 +1,6 @@
+SCORE a_example: 2
+SCORE b_lovely_landscapes: 205638
+SCORE c_memorable_moments: 840
+SCORE d_pet_pictures: 210636
+SCORE e_shiny_selfies: 143109
+========= TOTAL : 560225
