@@ -267,10 +267,10 @@ public class Recuit {
                                          "recuit_c.text",
                                          "recuit_d.text",
                                          "recuit_e.text");
-        //Thread b = new Thread(() -> execute(fileList.get(0), res.get(0), "b"));
+        Thread b = new Thread(() -> execute(fileList.get(0), res.get(0), "b"));
         Thread c = new Thread(() -> execute(fileList.get(1), res.get(1), "c"));
-        //Thread d = new Thread(() -> execute(fileList.get(2), res.get(2), "d"));
-        //Thread e = new Thread(() -> execute(fileList.get(3), res.get(3), "e"));
+        Thread d = new Thread(() -> execute(fileList.get(2), res.get(2), "d"));
+        Thread e = new Thread(() -> execute(fileList.get(3), res.get(3), "e"));
 
         //b.start();
         c.start();

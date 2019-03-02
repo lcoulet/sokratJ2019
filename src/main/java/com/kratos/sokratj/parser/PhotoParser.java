@@ -67,13 +67,13 @@ public class PhotoParser {
 
     }
 
-    public static List<PhotoOpti> optimize(final List<Photo> toOptimze) {
+    public static List<PhotoOpti> optimize(final List<Photo> toOptimize) {
         List<PhotoOpti> res = new ArrayList<>();
 
         Map<String, Long> tagMap = new HashMap<>();
         long count = 0;
 
-        for (Photo photo : toOptimze) {
+        for (Photo photo : toOptimize) {
             for (String s : photo.getTags()) {
                 if (!tagMap.containsKey(s)) {
                     tagMap.put(s, count);
@@ -82,9 +82,40 @@ public class PhotoParser {
             }
         }
 
-        for (Photo photo : toOptimze) {
+        for (Photo photo : toOptimize) {
             List<Long> translated = photo.getTags().stream().map(tagMap::get).collect(Collectors.toList());
-            res.add(new PhotoOpti(translated, photo.getId(), photo.isVertical()));
+            res.add(new PhotoOpti(translated, photo.getId(), photo.isVertical(), 0));
+        }
+
+        return res;
+    }
+
+    public static List<PhotoOpti> optimizeWithUnique(final List<Photo> toOptimize) {
+        List<PhotoOpti> res = new ArrayList<>();
+
+        Map<String, Long> tagMap = new HashMap<>();
+        Map<String, Integer> countMap = new HashMap<>();
+        long count = 0;
+
+        for (Photo photo : toOptimize) {
+            for (String s : photo.getTags()) {
+                if (!tagMap.containsKey(s)) {
+                    tagMap.put(s, count);
+                    ++count;
+                    countMap.put(s, 1);
+                }
+                else {
+                    countMap.put(s, countMap.get(s) + 1);
+                }
+            }
+        }
+
+        for (Photo photo : toOptimize) {
+            List<Long> translated = photo.getTags().stream().filter(s -> countMap.get(s) > 1).map(tagMap::get).collect(Collectors.toList());
+            res.add(new PhotoOpti(translated,
+                                  photo.getId(),
+                                  photo.isVertical(),
+                                  photo.getTags().size() - translated.size()));
         }
 
         return res;
