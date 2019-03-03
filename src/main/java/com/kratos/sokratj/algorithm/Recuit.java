@@ -1,46 +1,45 @@
 package com.kratos.sokratj.algorithm;
 
 import com.kratos.sokratj.SolutionSerializer;
-import com.kratos.sokratj.model.Photo;
-import com.kratos.sokratj.model.Slide;
-import com.kratos.sokratj.model.SlideMutable;
+import com.kratos.sokratj.model.*;
 import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
 
 public class Recuit {
-    private List<Slide> startSolution;
+    private List<SlideOpti> startSolution;
     private int doubleSlideCount;
     private int simpleSlideCount;
     private Random random;
 
-    private List<Slide> best;
+    private List<SlideOpti> best;
     private long bestScore;
 
-    private Map<Slide, Integer> slideIntegerMap;
-    private List<Slide> doubleSlideList;
+    private Map<SlideOpti, Integer> slideIntegerMap;
+    private List<SlideOpti> doubleSlideList;
 
     private final String name;
 
     public Recuit(final List<Photo> photoList, String name) {
         random = new Random(System.currentTimeMillis());
         startSolution = generateSolution(photoList);
-        System.out.println(Score.getScore(startSolution));
+        System.out.println(Score.getScoreOpti(startSolution));
         this.name = name;
     }
 
-    public List<Slide> optimize(final String filename) throws FileNotFoundException {
+    public List<SlideOpti> optimize(final String filename) throws FileNotFoundException {
         SolutionSerializer serializer = new SolutionSerializer();
         double startTemperature = 5;
         double temperature = startTemperature;
         double tau = 5000000;
         double temperatureLimit = 0.001;
 
-        long referenceScore = Score.getScore(startSolution);
+        long referenceScore = Score.getScoreOpti(startSolution);
         long i = 0;
 
         long lastCheckScore = referenceScore;
@@ -51,7 +50,7 @@ public class Recuit {
 
         while (true) {
             swap = false;
-            List<Slide> newSolution = new ArrayList<>(startSolution);
+            List<SlideOpti> newSolution = new ArrayList<>(startSolution);
             int firstSlide;
             int secondSlide;
             if (doubleSlideCount != 0) {
@@ -73,13 +72,13 @@ public class Recuit {
                     }
                     int firstOne = random.nextInt(2);
                     int secondOne = random.nextInt(2);
-                    SlideMutable slide1 = new SlideMutable(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
+                    SlideOpti slide1 = new SlideOpti(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
                                                            startSolution.get(firstSlide).getId());
-                    SlideMutable slide2 = new SlideMutable(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
+                    SlideOpti slide2 = new SlideOpti(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
                                                            startSolution.get(secondSlide).getId());
 
-                    Photo temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
-                    Photo temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
+                    PhotoOpti temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
+                    PhotoOpti temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
                     slide1.getPhotos().set(firstOne, temp2);
                     slide2.getPhotos().set(secondOne, temp);
 
@@ -122,18 +121,21 @@ public class Recuit {
             ++i;
             if (i % 400000 == 0) {
                 System.out.println(name + " " + temperature + " " + bestScore + " (" + i + ")");
-                serializer.serializeSolutionToFile(best, new File(filename));
+                serializer.serializeSolutionToFileOpti(best, new File(filename));
                 if (lastCheckScore == bestScore && temperature < temperatureLimit) {
                     break;
                 }
                 lastCheckScore = bestScore;
             }
+            if (i > 1000000) {
+                break;
+            }
         }
-        System.out.println(name + " " + bestScore + " " + Score.getScore(best) + "(" + i + ")");
+        System.out.println(name + " " + bestScore + " " + Score.getScoreOpti(best) + "(" + i + ")");
         return best;
     }
 
-    private long getDeltaScore(final List<Slide> list, final List<Slide> newList, final int slide1, final int slide2) {
+    private long getDeltaScore(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
         if (slide1 == slide2) {
             return 0;
         }
@@ -184,7 +186,7 @@ public class Recuit {
         return previousScore - newScore;
     }
 
-    private long handleConsecutive(final List<Slide> list, final List<Slide> newList, final int slide1, final int slide2) {
+    private long handleConsecutive(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
         int firstSlide = Math.min(slide1, slide2);
         int secondSlide = Math.max(slide1, slide2);
         long previousScore;
@@ -217,25 +219,26 @@ public class Recuit {
         return slideIntegerMap.get(doubleSlideList.get(index));
     }
 
-    private List<Slide> generateSolution(final List<Photo> photoList) {
-        Photo verticalBuffer = null;
+    private List<SlideOpti> generateSolution(final List<Photo> photoList) {
+        List<PhotoOpti> optiList = PhotoParser.optimize(photoList);
+        PhotoOpti verticalBuffer = null;
         simpleSlideCount = 0;
         doubleSlideCount = 0;
 
         slideIntegerMap = new HashMap<>();
         doubleSlideList = new ArrayList<>();
 
-        List<Slide> solutionList = new ArrayList<>();
+        List<SlideOpti> solutionList = new ArrayList<>();
 
         int currentIndex = 0;
 
-        for (Photo photo : photoList) {
+        for (PhotoOpti photo : optiList) {
             if (photo.isVertical()) {
                 if (verticalBuffer == null) {
                     verticalBuffer = photo;
                 }
                 else {
-                    Slide slide = new SlideMutable(Arrays.asList(verticalBuffer, photo), currentIndex);
+                    SlideOpti slide = new SlideOpti(Arrays.asList(verticalBuffer, photo), currentIndex);
                     solutionList.add(slide);
                     doubleSlideList.add(slide);
                     slideIntegerMap.put(slide, currentIndex);
@@ -245,7 +248,7 @@ public class Recuit {
                 }
             }
             else {
-                solutionList.add(new SlideMutable(Arrays.asList(photo), currentIndex));
+                solutionList.add(new SlideOpti(Arrays.asList(photo), currentIndex));
                 ++simpleSlideCount;
                 ++currentIndex;
             }
@@ -255,6 +258,7 @@ public class Recuit {
 
 
     public static void main(final String[] args) throws IOException, InterruptedException {
+        Instant now = Instant.now();
         List<String> fileList = Arrays.asList("data/b_lovely_landscapes.txt",
                                               "data/c_memorable_moments.txt",
                                               "data/d_pet_pictures.txt",
@@ -268,15 +272,16 @@ public class Recuit {
         Thread d = new Thread(() -> execute(fileList.get(2), res.get(2), "d"));
         Thread e = new Thread(() -> execute(fileList.get(3), res.get(3), "e"));
 
-        b.start();
+        //b.start();
         c.start();
-        d.start();
-        e.start();
+        //d.start();
+        //e.start();
 
-        b.join();
+        //b.join();
         c.join();
-        d.join();
-        e.join();
+        //d.join();
+        //e.join();
+        System.out.println(Instant.now().toEpochMilli() - now.toEpochMilli());
     }
 
     private static void execute(final String file,
