@@ -195,6 +195,9 @@ public class OnlyBWithAnalyze {
         System.out.println(Score.getScoreOptiB(photoList.get(0).slideOpti));
         SolutionSerializer solutionSerializer = new SolutionSerializer();
         solutionSerializer.serializeSolutionToFileOptiB(photoList.get(0).slideOpti, new File("res_opti_b_analysis.txt"));
+
+        RecuitOnlyB onlyB = new RecuitOnlyB(photoList.get(0).slideOpti, "b");
+        onlyB.optimize("opti_and_recuit_b.txt");
     }
 
     public static void main(final String[] args) throws IOException {
