@@ -20,37 +20,37 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 public class OnlyForB {
-    static class PhotoList {
-        private List<SlideOptiB> slideOpti;
+    public static class PhotoList {
+        public List<SlideOptiB> slideOpti;
 
-        private PhotoList(final SlideOptiB photo) {
+        public PhotoList(final SlideOptiB photo) {
             slideOpti = new ArrayList<>();
             slideOpti.add(photo);
         }
 
-        private void addLeft(final PhotoList toAdd) {
+        public void addLeft(final PhotoList toAdd) {
             slideOpti.addAll(0, toAdd.slideOpti);
         }
 
-        private void addLeftReverse(final PhotoList toAdd) {
+        public void addLeftReverse(final PhotoList toAdd) {
             Collections.reverse(toAdd.slideOpti);
             slideOpti.addAll(0, toAdd.slideOpti);
         }
 
-        private void addRight(final PhotoList toAdd) {
+        public void addRight(final PhotoList toAdd) {
             slideOpti.addAll(toAdd.slideOpti);
         }
 
-        private void addRightReverse(final PhotoList toAdd) {
+        public void addRightReverse(final PhotoList toAdd) {
             Collections.reverse(toAdd.slideOpti);
             slideOpti.addAll(toAdd.slideOpti);
         }
 
-        private SlideOptiB getLeft() {
+        public SlideOptiB getLeft() {
             return slideOpti.get(0);
         }
 
-        private SlideOptiB getRight() {
+        public SlideOptiB getRight() {
             return slideOpti.get(slideOpti.size() - 1);
         }
     }
