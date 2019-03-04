@@ -1,7 +1,10 @@
 package com.kratos.sokratj.algorithm;
 
 import com.kratos.sokratj.SolutionSerializer;
-import com.kratos.sokratj.model.*;
+import com.kratos.sokratj.model.Photo;
+import com.kratos.sokratj.model.PhotoOpti;
+import com.kratos.sokratj.model.Slide;
+import com.kratos.sokratj.model.SlideOpti;
 import com.kratos.sokratj.parser.PhotoParser;
 import com.kratos.sokratj.utils.Score;
 
@@ -11,33 +14,32 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
-public class Recuit {
+public class RecuitMixed {
     private List<SlideOpti> startSolution;
-    private int doubleSlideCount;
-    private int simpleSlideCount;
     private Random random;
 
     private List<SlideOpti> best;
     private long bestScore;
 
-    private Map<SlideOpti, Integer> slideIntegerMap;
-    private List<SlideOpti> doubleSlideList;
-
     private final String name;
+    private final int solutionSize;
 
-    public Recuit(final List<Photo> photoList, String name) {
+    public RecuitMixed(final List<Photo> photoList, String name) {
         random = new Random(System.currentTimeMillis());
         startSolution = generateSolution(photoList);
+        solutionSize = startSolution.size();
+
         System.out.println(Score.getScoreOpti(startSolution));
         this.name = name;
     }
 
     public List<SlideOpti> optimize(final String filename) throws FileNotFoundException {
         SolutionSerializer serializer = new SolutionSerializer();
-        double startTemperature = 5;
+        double startTemperature = 1;
         double temperature = startTemperature;
         double tau = 5000000;
         double temperatureLimit = 0.001;
+
 
         long referenceScore = Score.getScoreOpti(startSolution);
         long i = 0;
@@ -46,68 +48,82 @@ public class Recuit {
 
         bestScore = referenceScore;
         best = startSolution;
-        boolean swap = false;
 
         Instant ref = Instant.now();
         while (true) {
-            swap = false;
-            List<SlideOpti> newSolution = new ArrayList<>(startSolution);
+            List<SlideOpti> newSolution;
             int firstSlide;
             int secondSlide;
-            if (doubleSlideCount != 0) {
-                int choice = random.nextInt(2);
-                if (choice == 0) {
-                    firstSlide = random.nextInt(startSolution.size());
-                    secondSlide = random.nextInt(startSolution.size());
-                    while (secondSlide == firstSlide) {
-                        secondSlide = random.nextInt(startSolution.size());
-                    }
-                    Collections.swap(newSolution, firstSlide, secondSlide);
-                    swap = true;
-                }
-                else {
-                    firstSlide = getIndex(random.nextInt(doubleSlideCount));
-                    secondSlide = getIndex(random.nextInt(doubleSlideCount));
-                    while (secondSlide == firstSlide) {
-                        secondSlide = getIndex(random.nextInt(doubleSlideCount));
-                    }
-                    int firstOne = random.nextInt(2);
-                    int secondOne = random.nextInt(2);
-                    SlideOpti slide1 = new SlideOpti(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
-                                                           startSolution.get(firstSlide).getId());
-                    SlideOpti slide2 = new SlideOpti(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
-                                                           startSolution.get(secondSlide).getId());
+            long newScore;
 
-                    PhotoOpti temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
-                    PhotoOpti temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
-                    slide1.getPhotos().set(firstOne, temp2);
-                    slide2.getPhotos().set(secondOne, temp);
-
-                    newSolution.set(firstSlide, slide1);
-                    newSolution.set(secondSlide, slide2);
-                }
-            }
-            else {
-                firstSlide = random.nextInt(startSolution.size());
-                secondSlide = random.nextInt(startSolution.size());
+            int choice = random.nextInt(4);
+            if (choice == 0) {
+                newSolution = new ArrayList<>(startSolution);
+                firstSlide = random.nextInt(solutionSize);
+                secondSlide = random.nextInt(solutionSize);
                 while (secondSlide == firstSlide) {
-                    secondSlide = random.nextInt(startSolution.size());
+                    secondSlide = random.nextInt(solutionSize);
                 }
                 Collections.swap(newSolution, firstSlide, secondSlide);
+                newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
             }
+            else if (choice == 1) {
+                firstSlide = random.nextInt(solutionSize);
+                secondSlide = random.nextInt(solutionSize);
+                while (Math.abs(secondSlide - firstSlide) < 2) { //we don't want consecutive
+                    secondSlide = random.nextInt(solutionSize);
+                }
+                int little = Math.min(firstSlide, secondSlide);
+                int big = Math.max(firstSlide, secondSlide);
 
-            long newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
-            if (newScore > referenceScore
-                || Math.exp(-(referenceScore - newScore) / temperature) > random.nextDouble()) {
-                if (swap) {
-                    if (startSolution.get(firstSlide).getPhotos().size() != 1) {
-                        slideIntegerMap.put(startSolution.get(firstSlide), secondSlide);
-                    }
-                    if (startSolution.get(secondSlide).getPhotos().size() != 1) {
-                        slideIntegerMap.put(startSolution.get(secondSlide), firstSlide);
-                    }
+                newSolution = new ArrayList<>(startSolution.subList(0, little));
+                List<SlideOpti> toReverse = startSolution.subList(little, big + 1);
+                for (int k = toReverse.size() - 1; k >=0; --k ) {
+                    newSolution.add(toReverse.get(k));
                 }
 
+                newSolution.addAll(startSolution.subList(big + 1, solutionSize));
+                newScore = referenceScore - getReverseScore(startSolution, newSolution, little, big);
+            }
+            else if (choice == 3) {
+                firstSlide = random.nextInt(solutionSize);
+                secondSlide = random.nextInt(solutionSize);
+                while (Math.abs(secondSlide - firstSlide) < 2) { //we don't want consecutive
+                    secondSlide = random.nextInt(solutionSize);
+                }
+
+                newSolution = new ArrayList<>(startSolution);
+                SlideOpti switched = newSolution.remove(firstSlide);
+                newSolution.add(secondSlide, switched);
+                newScore = referenceScore - getInsertScore(startSolution, newSolution, firstSlide, secondSlide);
+//                System.out.println(startSolution.get(firstSlide - 1).getId() + " " + startSolution.get(firstSlide).getId() + " " +startSolution.get(firstSlide + 1).getId() + " ... " + startSolution.get(secondSlide - 1).getId() + " " + startSolution.get(secondSlide).getId() + " " + startSolution.get(secondSlide + 1).getId());
+//                System.out.println(newSolution.get(firstSlide - 1).getId() + " " + newSolution.get(firstSlide).getId() + " " +newSolution.get(firstSlide + 1).getId() + " ... " + newSolution.get(secondSlide - 1).getId() + " " +newSolution.get(secondSlide).getId() + " " + newSolution.get(secondSlide + 1).getId());
+//                System.out.println(newScore + " " + Score.getScoreOpti(newSolution));
+            }
+            else {
+                newSolution = new ArrayList<>(startSolution);
+                firstSlide = getDoubleSlide(-1);
+                secondSlide = getDoubleSlide(firstSlide);
+
+                int firstOne = random.nextInt(2);
+                int secondOne = random.nextInt(2);
+                SlideOpti slide1 = new SlideOpti(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
+                                                 startSolution.get(firstSlide).getId());
+                SlideOpti slide2 = new SlideOpti(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
+                                                 startSolution.get(secondSlide).getId());
+
+                PhotoOpti temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
+                PhotoOpti temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
+                slide1.getPhotos().set(firstOne, temp2);
+                slide2.getPhotos().set(secondOne, temp);
+
+                newSolution.set(firstSlide, slide1);
+                newSolution.set(secondSlide, slide2);
+                newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
+            }
+
+            if (newScore > referenceScore
+                || Math.exp(-(referenceScore - newScore) / temperature) > random.nextDouble()) {
                 startSolution = newSolution;
                 referenceScore = newScore;
             }
@@ -135,6 +151,14 @@ public class Recuit {
         return best;
     }
 
+    private int getDoubleSlide(final int avoided) {
+        int res = random.nextInt(solutionSize);
+        while (!startSolution.get(res).isDouble() || res == avoided) {
+            res = random.nextInt(solutionSize);
+        }
+        return res;
+    }
+
     private long getDeltaScore(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
         if (slide1 == slide2) {
             return 0;
@@ -153,7 +177,7 @@ public class Recuit {
                 previousScore = Score.computeScore(list.get(firstSlide), list.get(firstSlide + 1))
                                 + Score.computeScore(list.get(secondSlide - 1), list.get(secondSlide));
                 newScore =Score.computeScore(newList.get(firstSlide), newList.get(firstSlide + 1))
-                           + Score.computeScore(newList.get(secondSlide - 1), newList.get(secondSlide));
+                          + Score.computeScore(newList.get(secondSlide - 1), newList.get(secondSlide));
             }
             else {
                 previousScore = Score.computeScore(list.get(firstSlide), list.get(firstSlide + 1))
@@ -182,7 +206,7 @@ public class Recuit {
                        + Score.computeScore(newList.get(secondSlide - 1), newList.get(secondSlide))
                        + Score.computeScore(newList.get(secondSlide), newList.get(secondSlide + 1));
         }
-        //System.out.println(firstSlide + " " +secondSlide + " " + newScore + " " + previousScore);
+//        System.out.println(firstSlide + " " +secondSlide + " " + newScore + " " + previousScore);
         return previousScore - newScore;
     }
 
@@ -215,18 +239,69 @@ public class Recuit {
         return previousScore - newScore;
     }
 
-    private int getIndex(final int index) {
-        return slideIntegerMap.get(doubleSlideList.get(index));
+    private long getReverseScore(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
+        long previousScore = 0;
+        long newScore = 0;
+
+        if (slide1 != 0) {
+            previousScore += Score.computeScore(list.get(slide1 - 1), list.get(slide1));
+            newScore += Score.computeScore(newList.get(slide1 - 1), newList.get(slide1));
+        }
+        if (slide2 != solutionSize - 1) {
+            previousScore += Score.computeScore(list.get(slide2), list.get(slide2 + 1));
+            newScore += Score.computeScore(newList.get(slide2), newList.get(slide2 + 1));
+        }
+
+        return previousScore - newScore;
     }
+
+    private long getInsertScore(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
+        if (slide1 < slide2) {
+            return getInsertScoreLower(list, newList, slide1, slide2);
+        }
+        else {
+            return getInsertScoreHigher(list, newList, slide1, slide2);
+        }
+    }
+
+    private long getInsertScoreLower(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
+        long previousScore = Score.computeScore(list.get(slide1 + 1), list.get(slide1));
+        long newScore = Score.computeScore(newList.get(slide2 - 1), newList.get(slide2));
+
+        if (slide1 != 0) {
+            previousScore += Score.computeScore(list.get(slide1 - 1), list.get(slide1));
+            newScore += Score.computeScore(newList.get(slide1 - 1), newList.get(slide1));
+        }
+
+        if (slide2 != solutionSize - 1) {
+            previousScore += Score.computeScore(list.get(slide2 + 1), list.get(slide2));
+            newScore += Score.computeScore(newList.get(slide2), newList.get(slide2 + 1));
+        }
+//        System.out.println("lower " + slide1 + " " +slide2 + " " + newScore + " " + previousScore);
+        return previousScore - newScore;
+    }
+
+    private long getInsertScoreHigher(final List<SlideOpti> list, final List<SlideOpti> newList, final int slide1, final int slide2) {
+        long previousScore = Score.computeScore(list.get(slide1 - 1), list.get(slide1));
+        long newScore = Score.computeScore(newList.get(slide2 + 1), newList.get(slide2));
+
+        if (slide2 != 0) {
+            previousScore += Score.computeScore(list.get(slide2 - 1), list.get(slide2));
+            newScore += Score.computeScore(newList.get(slide2 - 1), newList.get(slide2));
+        }
+
+        if (slide1 != solutionSize - 1) {
+            previousScore += Score.computeScore(list.get(slide1 + 1), list.get(slide1));
+            newScore += Score.computeScore(newList.get(slide1 + 1), newList.get(slide1));
+        }
+//        System.out.println("higher " + slide1 + " " +slide2 + " " + newScore + " " + previousScore);
+        return previousScore - newScore;
+    }
+
 
     private List<SlideOpti> generateSolution(final List<Photo> photoList) {
         List<PhotoOpti> optiList = PhotoParser.optimize(photoList);
         PhotoOpti verticalBuffer = null;
-        simpleSlideCount = 0;
-        doubleSlideCount = 0;
-
-        slideIntegerMap = new HashMap<>();
-        doubleSlideList = new ArrayList<>();
 
         List<SlideOpti> solutionList = new ArrayList<>();
 
@@ -240,16 +315,12 @@ public class Recuit {
                 else {
                     SlideOpti slide = new SlideOpti(Arrays.asList(verticalBuffer, photo), currentIndex);
                     solutionList.add(slide);
-                    doubleSlideList.add(slide);
-                    slideIntegerMap.put(slide, currentIndex);
                     verticalBuffer = null;
-                    ++doubleSlideCount;
                     ++currentIndex;
                 }
             }
             else {
                 solutionList.add(new SlideOpti(Arrays.asList(photo), currentIndex));
-                ++simpleSlideCount;
                 ++currentIndex;
             }
         }
@@ -274,13 +345,13 @@ public class Recuit {
 
         //b.start();
         c.start();
-        //d.start();
-        //e.start();
+        d.start();
+        e.start();
 
         //b.join();
         c.join();
-        //d.join();
-        //e.join();
+        d.join();
+        e.join();
         System.out.println(Instant.now().toEpochMilli() - now.toEpochMilli());
     }
 
@@ -289,7 +360,7 @@ public class Recuit {
                                 final String name) {
         try {
             List<Photo> photos = new PhotoParser().parseData(file);
-            Recuit recuit = new Recuit(photos, name);
+            RecuitMixed recuit = new RecuitMixed(photos, name);
             recuit.optimize(res);
         }
         catch (Exception e) {
