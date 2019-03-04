@@ -181,7 +181,7 @@ public class Stupid {
             return map.asMap().entrySet().parallelStream()
                     .limit(limitSearch)
                     .map(entry -> {
-                        if(entry.getValue() == 1 ){
+                        if(entry.getValue() == 1){
                             minEntry.set(entry);
                             throw new IllegalStateException("Gotcha !");
                         }
@@ -219,7 +219,12 @@ public class Stupid {
     private Photo getAPhotoWithLeastCommonTags(Photo photo, List<Photo> allOthers) {
         Set<Photo> commontagsPhotoSet = getPhotosSetWithCommonTags(photo);
 
-        Optional<Photo> optionalres = allOthers.parallelStream().filter(p-> !commontagsPhotoSet.contains(p)).findFirst();
+        // ideally there should be no tag in common AND the total of tags is even (to maximize possible score)
+        Optional<Photo> optionalres = allOthers.parallelStream().filter(p-> !commontagsPhotoSet.contains(p) && (photo.getTags().size() + p.getTags().size())%2 == 0).findFirst();
+
+        if (!optionalres.isPresent()) {
+            optionalres = allOthers.parallelStream().filter(p-> !commontagsPhotoSet.contains(p)).findFirst();
+        }
 
         if (optionalres.isPresent()) {
             return optionalres.get();
