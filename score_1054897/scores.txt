@@ -1,0 +1,7 @@
+SCORE of a_example : 2 (max 9?)
+SCORE of b_lovely_landscapes : 198903 (max 1440000?)
+SCORE of c_memorable_moments : 1479 (max 9476?)
+SCORE of d_pet_pictures : 437353 (max 902256?)
+SCORE of e_shiny_selfies : 417160 (max 1527981?)
+========= TOTAL : 1054897(MAX? : 3879722)
+

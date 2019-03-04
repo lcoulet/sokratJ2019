@@ -67,6 +67,7 @@ public class Main {
         scoresStr.append(scoreMsg);
         new SolutionSerializer().serializeSolutionToFile(solution, new File(dataSet+".results"));
         System.out.println("TIME:  " + timer.elapsed(TimeUnit.SECONDS) + " sec.");
+        Score.checkResults(solution);
         return score;
     }
 
