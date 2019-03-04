@@ -147,20 +147,21 @@ public class Stupid {
         photosWithCommonTags.parallelStream().forEach(map::incrementAndGet);
 
         AtomicReference<Photo> selected = new AtomicReference<>();
-        Optional<AbstractMap.SimpleEntry<Photo, Long>> res;
+        Optional<AbstractMap.SimpleEntry<Photo, Double>> res;
+        final double bestPossibleScore=1.0/3.0;
         try{
             res = map.asMap().entrySet()
                     .parallelStream()
                     .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), score(photo, e.getKey(), e.getValue())))
                     .limit(limitSearch)
                     .map(entry -> {
-                        if(entry.getValue() == photo.getTags().size()/2){
+                        if(bestPossibleScore - entry.getValue() < 0.01){
                             selected.set(entry.getKey());
                             throw new IllegalStateException("Got one");
                         }
                         return entry;
                     })
-                    .max(Comparator.comparingLong(AbstractMap.SimpleEntry::getValue));
+                    .max(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue));
         }catch(Exception e){
             return selected.get();
         }
@@ -191,8 +192,13 @@ public class Stupid {
         }
     }
 
-    private long score(Photo current, Photo matching, long tagsInCommon){
-        return Math.min(tagsInCommon, Math.min(current.getTags().size(), matching.getTags().size()) - tagsInCommon);
+    private double score(Photo current, Photo matching, long tagsInCommon){
+        long rightRemain = matching.getTags().size() - tagsInCommon;
+        long leftRemain = current.getTags().size() - tagsInCommon;
+        long allTags = matching.getTags().size() + current.getTags().size();
+        long score = Math.min(tagsInCommon, Math.min(leftRemain, rightRemain));
+        double normalized = score/(allTags*1.0);
+        return normalized;
     }
 
     private List<Photo> getPhotosWithCommonTags(Photo photo) {
