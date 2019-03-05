@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import static com.kratos.sokratj.algorithm.BRecursive.extract;
@@ -104,6 +105,7 @@ public class OnlyBWithAnalyze {
         Random random = new Random(System.currentTimeMillis());
         Instant refTime = Instant.now();
         long accScore = 0;
+        boolean noMore = false;
 
         while (photoList.size() != 1) {
             long bestScore = -1;
@@ -112,18 +114,40 @@ public class OnlyBWithAnalyze {
             int indexLeft = -1;
             int indexRight = -1;
 
-            int i = random.nextInt(photoList.size());
-            OnlyForB.PhotoList lala = photoList.get(i);
+            int selected;
+            if (!noMore) {
+                int min = Integer.MAX_VALUE;
+                int found = -1;
+                for (int i = 0; i < photoList.size(); ++i) {
+                    if (photoList.get(i).slideOpti.size() == 1) {
+                        if (data.get(photoList.get(i).slideOpti.get(0).getId()).size() < min) {
+                            found = i;
+                            min = photoList.get(i).slideOpti.size();
+                        }
+                    }
+                }
+                if (found == -1) {
+                    noMore = true;
+                    found = random.nextInt(photoList.size());
+                }
+                selected = found;
+            }
+            else {
+                selected = random.nextInt(photoList.size());
+            }
+
+            int refIndex = selected;
+            OnlyForB.PhotoList lala = photoList.get(refIndex);
 
             for (int j = 0; j < photoList.size(); j++) {
-                if (i == j) {
+                if (refIndex == j) {
                     continue;
                 }
                 long score = getScore(lala.getLeft().getPhoto().getId(), photoList.get(j).getRight().getPhoto().getId());
                 if (score > bestScore) {
                     bestScore = score;
                     indexLeft = j;
-                    indexRight = i;
+                    indexRight = refIndex;
                     left = true;
                     reverse = false;
                 }
@@ -131,7 +155,7 @@ public class OnlyBWithAnalyze {
                     score = getScore(lala.getRight().getPhoto().getId(), photoList.get(j).getLeft().getPhoto().getId());
                     if (score > bestScore) {
                         bestScore = score;
-                        indexLeft = i;
+                        indexLeft = refIndex;
                         indexRight = j;
                         left = false;
                         reverse = false;
@@ -140,7 +164,7 @@ public class OnlyBWithAnalyze {
                     score = getScore(lala.getLeft().getPhoto().getId(), photoList.get(j).getLeft().getPhoto().getId());
                     if (score > bestScore) {
                         bestScore = score;
-                        indexLeft = i;
+                        indexLeft = refIndex;
                         indexRight = j;
                         left = true;
                         reverse = true;
@@ -149,7 +173,7 @@ public class OnlyBWithAnalyze {
                     score = getScore(lala.getRight().getPhoto().getId(), photoList.get(j).getRight().getPhoto().getId());
                     if (score > bestScore) {
                         bestScore = score;
-                        indexLeft = i;
+                        indexLeft = refIndex;
                         indexRight = j;
                         left = false;
                         reverse = true;
@@ -196,8 +220,8 @@ public class OnlyBWithAnalyze {
         SolutionSerializer solutionSerializer = new SolutionSerializer();
         solutionSerializer.serializeSolutionToFileOptiB(photoList.get(0).slideOpti, new File("res_opti_b_analysis.txt"));
 
-        RecuitOnlyB onlyB = new RecuitOnlyB(photoList.get(0).slideOpti, "b");
-        onlyB.optimize("opti_and_recuit_b.txt");
+        //RecuitMixedOnlyB onlyB = new RecuitMixedOnlyB(photoList.get(0).slideOpti, "b");
+        //onlyB.optimize("opti_and_recuit_mixed_b.txt");
     }
 
     public static void main(final String[] args) throws IOException {

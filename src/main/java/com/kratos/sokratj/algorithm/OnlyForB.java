@@ -33,8 +33,9 @@ public class OnlyForB {
         }
 
         public void addLeftReverse(final PhotoList toAdd) {
-            Collections.reverse(toAdd.slideOpti);
-            slideOpti.addAll(0, toAdd.slideOpti);
+            for (SlideOptiB slideOptiB : toAdd.slideOpti) {
+                slideOpti.add(0, slideOptiB);
+            }
         }
 
         public void addRight(final PhotoList toAdd) {
@@ -42,8 +43,9 @@ public class OnlyForB {
         }
 
         public void addRightReverse(final PhotoList toAdd) {
-            Collections.reverse(toAdd.slideOpti);
-            slideOpti.addAll(toAdd.slideOpti);
+            for (int i = toAdd.slideOpti.size() - 1; i >= 0; --i) {
+                slideOpti.add(toAdd.slideOpti.get(i));
+            }
         }
 
         public SlideOptiB getLeft() {
