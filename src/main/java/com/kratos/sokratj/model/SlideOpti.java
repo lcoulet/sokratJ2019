@@ -1,11 +1,13 @@
 package com.kratos.sokratj.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SlideOpti {
     private final List<PhotoOpti> photoList;
     private final int id;
     private final boolean isDouble;
+    private List<Long> tagList;
 
     public SlideOpti(final List<PhotoOpti> photoList, final int id) {
         this.photoList = photoList;
@@ -27,6 +29,17 @@ public class SlideOpti {
 
     public boolean isDouble() {
         return isDouble;
+    }
+
+    public void generateTagList() {
+        tagList = getPhotos().stream()
+                             .flatMap(photo -> photo.getTags().stream())
+                             .distinct()
+                             .collect(Collectors.toList());
+    }
+
+    public List<Long> getTagList() {
+        return tagList;
     }
 
     public boolean equals(final Object obj) {

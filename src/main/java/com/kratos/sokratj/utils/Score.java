@@ -28,13 +28,8 @@ public class Score {
 
     public static long computeScore(final SlideOpti lhs,
                                     final SlideOpti rhs) {
-        List<Long> leftTags = lhs.getPhotos()
-                .stream()
-                .flatMap(photo -> photo.getTags().stream()).distinct().collect(Collectors.toList());
-        List<Long> rightTags = rhs.getPhotos().stream()
-                .flatMap(photo -> photo.getTags().stream())
-                .distinct()
-                .collect(Collectors.toList());
+        List<Long> leftTags = lhs.getTagList();
+        List<Long> rightTags = rhs.getTagList();
 
         long lhsExclusive = leftTags.stream().filter(s -> !rightTags.contains(s)).count();
         long common = leftTags.size() - lhsExclusive;

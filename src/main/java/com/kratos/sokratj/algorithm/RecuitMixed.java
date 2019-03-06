@@ -37,8 +37,10 @@ public class RecuitMixed {
         SolutionSerializer serializer = new SolutionSerializer();
         double startTemperature = 1;
         double temperature = startTemperature;
-        double tau = 5000000;
+        double tau = 50000000;
         double temperatureLimit = 0.001;
+
+        long cumulativeEntropy = 0;
 
 
         long referenceScore = Score.getScoreOpti(startSolution);
@@ -55,6 +57,7 @@ public class RecuitMixed {
             int firstSlide;
             int secondSlide;
             long newScore;
+            long deltaEntropy = 0;
 
             int choice = random.nextInt(4);
             if (choice == 0) {
@@ -78,7 +81,7 @@ public class RecuitMixed {
 
                 newSolution = new ArrayList<>(startSolution.subList(0, little));
                 List<SlideOpti> toReverse = startSolution.subList(little, big + 1);
-                for (int k = toReverse.size() - 1; k >=0; --k ) {
+                for (int k = toReverse.size() - 1; k >= 0; --k) {
                     newSolution.add(toReverse.get(k));
                 }
 
@@ -109,21 +112,35 @@ public class RecuitMixed {
                 int secondOne = random.nextInt(2);
                 SlideOpti slide1 = new SlideOpti(new ArrayList<>(startSolution.get(firstSlide).getPhotos()),
                                                  startSolution.get(firstSlide).getId());
+                slide1.generateTagList();
                 SlideOpti slide2 = new SlideOpti(new ArrayList<>(startSolution.get(secondSlide).getPhotos()),
                                                  startSolution.get(secondSlide).getId());
+                slide2.generateTagList();
+
+                long oldEntropy = slide1.getTagList().size()
+                                  + slide2.getTagList().size();
 
                 PhotoOpti temp = startSolution.get(firstSlide).getPhotos().get(firstOne);
                 PhotoOpti temp2 = startSolution.get(secondSlide).getPhotos().get(secondOne);
                 slide1.getPhotos().set(firstOne, temp2);
                 slide2.getPhotos().set(secondOne, temp);
 
+                slide1.generateTagList();
+                slide2.generateTagList();
+
                 newSolution.set(firstSlide, slide1);
                 newSolution.set(secondSlide, slide2);
                 newScore = referenceScore - getDeltaScore(startSolution, newSolution, firstSlide, secondSlide);
-            }
 
-            if (newScore > referenceScore
+                long newEntropy = slide1.getTagList().size()
+                                  + slide2.getTagList().size();
+                deltaEntropy = newEntropy - oldEntropy;
+            }
+            long deltaScore = referenceScore - newScore;
+
+            if (newScore > referenceScore || (newScore == referenceScore && deltaEntropy > 0) //|| (deltaEntropy > 0 && -deltaScore < deltaEntropy)
                 || Math.exp(-(referenceScore - newScore) / temperature) > random.nextDouble()) {
+                cumulativeEntropy += deltaEntropy;
                 startSolution = newSolution;
                 referenceScore = newScore;
             }
@@ -138,7 +155,7 @@ public class RecuitMixed {
             ++i;
             if (i % 400000 == 0) {
                 Instant newRef = Instant.now();
-                System.out.println(name + " " + temperature + " " + bestScore + " (" + i + " : " + (newRef.toEpochMilli() - ref.toEpochMilli()) +")");
+                System.out.println(name + " " + temperature + " " + bestScore + " " + cumulativeEntropy + " (" + i + " : " + (newRef.toEpochMilli() - ref.toEpochMilli()) + ")");
                 ref = newRef;
                 serializer.serializeSolutionToFileOpti(best, new File(filename));
                 if (lastCheckScore == bestScore && temperature < temperatureLimit) {
@@ -176,8 +193,8 @@ public class RecuitMixed {
             if (secondSlide == list.size() - 1) {
                 previousScore = Score.computeScore(list.get(firstSlide), list.get(firstSlide + 1))
                                 + Score.computeScore(list.get(secondSlide - 1), list.get(secondSlide));
-                newScore =Score.computeScore(newList.get(firstSlide), newList.get(firstSlide + 1))
-                          + Score.computeScore(newList.get(secondSlide - 1), newList.get(secondSlide));
+                newScore = Score.computeScore(newList.get(firstSlide), newList.get(firstSlide + 1))
+                           + Score.computeScore(newList.get(secondSlide - 1), newList.get(secondSlide));
             }
             else {
                 previousScore = Score.computeScore(list.get(firstSlide), list.get(firstSlide + 1))
@@ -314,13 +331,16 @@ public class RecuitMixed {
                 }
                 else {
                     SlideOpti slide = new SlideOpti(Arrays.asList(verticalBuffer, photo), currentIndex);
+                    slide.generateTagList();
                     solutionList.add(slide);
                     verticalBuffer = null;
                     ++currentIndex;
                 }
             }
             else {
-                solutionList.add(new SlideOpti(Arrays.asList(photo), currentIndex));
+                SlideOpti temp = new SlideOpti(Arrays.asList(photo), currentIndex);
+                temp.generateTagList();
+                solutionList.add(temp);
                 ++currentIndex;
             }
         }
@@ -345,13 +365,13 @@ public class RecuitMixed {
 
         //b.start();
         c.start();
-        d.start();
-        e.start();
+        //d.start();
+        //e.start();
 
         //b.join();
         c.join();
-        d.join();
-        e.join();
+        //d.join();
+        //e.join();
         System.out.println(Instant.now().toEpochMilli() - now.toEpochMilli());
     }
 
