@@ -1,7 +1,11 @@
 package com.kratos.sokratj.algorithm;
 
+import com.google.common.collect.Comparators;
+
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class BRecursive {
@@ -31,6 +35,11 @@ public class BRecursive {
 
     static long call = 0;
 
+    static long maxDepth = 0;
+    static long minDepth = 1000000;
+
+    static long cycle = 0;
+
 
     public static void treatData(final int depth, final int id) {
         ++call;
@@ -38,11 +47,22 @@ public class BRecursive {
         solution[depth] = id;
         added[id] = true;
 
+        if (depth > maxDepth) {
+            maxDepth = depth;
+        }
+        if (minDepth > depth) {
+            minDepth = depth;
+        }
         if (depth == solution.length - 1) {
             throw new RuntimeException("Terminated");
         }
         if (call % 4_194_304 == 0) {
-            System.out.println("Current depth " + depth);
+            if (cycle == 4) {
+                throw new RuntimeException("e");
+            }
+            System.out.println("Current depth " + depth + " " + minDepth + " " + maxDepth + " " + maxDepth * 3);
+            minDepth = 1000000;
+            ++cycle;
         }
 
         for (Integer integer : data.get(id)) {
@@ -57,6 +77,10 @@ public class BRecursive {
     public static void main(final String[] args) throws IOException {
         data = extract(new File("pair_b_save.txt"));
 
+        for (List<Integer> datum : data) {
+            datum.sort(Comparator.comparingInt(o -> data.get(o).size()));
+        }
+
         added = new boolean[data.size()];
         solution = new int[data.size()];
         for (int i = 0; i < data.size(); i++) {
@@ -65,11 +89,19 @@ public class BRecursive {
 
         try {
             for (int i = 0; i < data.size(); ++i) {
-                System.out.println("alal " + i);
-                if (data.get(i).size() % 2 != 0) {
+                System.out.println("lala " + i);
+                cycle = 0;
+                maxDepth = 0;
+                call = 0;
+                for (int j = 0; j < data.size(); ++j) {
+                    added[j] = false;
+                }
+                try {
                     treatData(0, i);
                 }
+                catch (RuntimeException e) {
 
+                }
             }
         }
         catch (Exception e) {
