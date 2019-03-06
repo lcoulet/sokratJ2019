@@ -37,7 +37,7 @@ public class RecuitMixed {
         SolutionSerializer serializer = new SolutionSerializer();
         double startTemperature = 1;
         double temperature = startTemperature;
-        double tau = 50000000;
+        double tau = 10000000;
         double temperatureLimit = 0.001;
 
         long cumulativeEntropy = 0;
@@ -59,7 +59,7 @@ public class RecuitMixed {
             long newScore;
             long deltaEntropy = 0;
 
-            int choice = random.nextInt(4);
+            int choice = random.nextInt(5);
             if (choice == 0) {
                 newSolution = new ArrayList<>(startSolution);
                 firstSlide = random.nextInt(solutionSize);
@@ -102,6 +102,33 @@ public class RecuitMixed {
 //                System.out.println(startSolution.get(firstSlide - 1).getId() + " " + startSolution.get(firstSlide).getId() + " " +startSolution.get(firstSlide + 1).getId() + " ... " + startSolution.get(secondSlide - 1).getId() + " " + startSolution.get(secondSlide).getId() + " " + startSolution.get(secondSlide + 1).getId());
 //                System.out.println(newSolution.get(firstSlide - 1).getId() + " " + newSolution.get(firstSlide).getId() + " " +newSolution.get(firstSlide + 1).getId() + " ... " + newSolution.get(secondSlide - 1).getId() + " " +newSolution.get(secondSlide).getId() + " " + newSolution.get(secondSlide + 1).getId());
 //                System.out.println(newScore + " " + Score.getScoreOpti(newSolution));
+            }
+            else if (choice == 4) {
+                firstSlide = random.nextInt(solutionSize - 2) + 1;
+                while (firstSlide == solutionSize - 1) {
+                    firstSlide = random.nextInt(solutionSize);
+                }
+                int size = random.nextInt(solutionSize - firstSlide - 1) + 1;
+                newSolution = new ArrayList<>(startSolution.subList(0, firstSlide));
+                newSolution.addAll(startSolution.subList(firstSlide + size, startSolution.size()));
+
+                int insert = random.nextInt(newSolution.size());
+                while (insert == firstSlide) {
+                    insert = random.nextInt(newSolution.size());
+                }
+                boolean reverse = random.nextInt(2) == 0;
+                if (!reverse) {
+                    newSolution.addAll(insert, startSolution.subList(firstSlide, firstSlide + size));
+                }
+                else {
+                    List<SlideOpti> temp = startSolution.subList(firstSlide, firstSlide + size);
+                    List<SlideOpti> reversed = new ArrayList<>(temp.size());
+                    for (int k = temp.size() - 1; k >= 0; --k) {
+                        reversed.add(temp.get(k));
+                    }
+                    newSolution.addAll(insert, reversed);
+                }
+                newScore = referenceScore - getInsertString(startSolution, newSolution, firstSlide, size, insert);
             }
             else {
                 newSolution = new ArrayList<>(startSolution);
@@ -155,7 +182,8 @@ public class RecuitMixed {
             ++i;
             if (i % 400000 == 0) {
                 Instant newRef = Instant.now();
-                System.out.println(name + " " + temperature + " " + bestScore + " " + cumulativeEntropy + " (" + i + " : " + (newRef.toEpochMilli() - ref.toEpochMilli()) + ")");
+                System.out.println(name + " " + temperature + " " + bestScore + "(" + Score.getScoreOpti(best) + ")"
+                                   + " " + cumulativeEntropy + " (" + i + " : " + (newRef.toEpochMilli() - ref.toEpochMilli()) + ")");
                 ref = newRef;
                 serializer.serializeSolutionToFileOpti(best, new File(filename));
                 if (lastCheckScore == bestScore && temperature < temperatureLimit) {
@@ -315,6 +343,40 @@ public class RecuitMixed {
         return previousScore - newScore;
     }
 
+    private long getScore(final List<SlideOpti> list, final int index1, final int index2) {
+        //System.out.println("index " + index1 +  " " + index2);
+        if (index1 < 0 || index2 < 0 || index1 >= list.size() || index2 >= list.size()) {
+            return 0;
+        }
+        return Score.computeScore(list.get(index1), list.get(index2));
+    }
+
+    private long getInsertString(final List<SlideOpti> list, final List<SlideOpti> newList, final int firstIndex, final int size, final int insert) {
+        int finalInsert = insert;
+        if (insert > firstIndex) {
+            finalInsert += size;
+        }
+
+        int finalFirst = firstIndex;
+        if (finalFirst > insert) {
+            finalFirst += size;
+        }
+
+//        System.out.println("lala " + firstIndex + " " + size + " " + insert);
+//        System.out.println(list.get(firstIndex - 1).getId() + " " + list.get(firstIndex).getId() + " " + list.get(firstIndex + 1).getId() + " ... " + list.get(size + firstIndex - 1).getId() + " " + list.get(size + firstIndex).getId() + " " + list.get(size + firstIndex + 1).getId());
+//        System.out.println(list.get(finalInsert-1).getId() + " " + list.get(finalInsert).getId() + " " + list.get(finalInsert+1).getId() + " ");
+//        System.out.println(newList.get(insert - 1).getId() + " " + newList.get(insert).getId() + " " + newList.get(insert + 1).getId() + " ... " + newList.get(size + insert - 1).getId() + " " + newList.get(size + insert).getId() + " " + newList.get(size + insert + 1).getId());
+//        System.out.println(newList.get(finalFirst-1).getId() + " " + newList.get(finalFirst).getId() + " " + newList.get(finalFirst+1).getId() + " ");
+
+        long previousScore = getScore(list, firstIndex - 1, firstIndex)
+                             + getScore(list, firstIndex + size - 1, firstIndex + size)
+                             + getScore(list, finalInsert - 1, finalInsert);
+        long newScore = getScore(newList, finalFirst - 1, finalFirst)
+                        + getScore(newList, insert - 1, insert)
+                        + getScore(newList, insert + size - 1, insert + size);
+        return previousScore - newScore;
+    }
+
 
     private List<SlideOpti> generateSolution(final List<Photo> photoList) {
         List<PhotoOpti> optiList = PhotoParser.optimize(photoList);
@@ -365,13 +427,13 @@ public class RecuitMixed {
 
         //b.start();
         c.start();
-        //d.start();
-        //e.start();
+        d.start();
+        e.start();
 
         //b.join();
         c.join();
-        //d.join();
-        //e.join();
+        d.join();
+        e.join();
         System.out.println(Instant.now().toEpochMilli() - now.toEpochMilli());
     }
 
